@@ -1,0 +1,1 @@
+Volunteer: Arman, CorrectWeight: True, AccuracyScore: 100.0%, CoinsOff: 0.0, TotalRaised: 20.0

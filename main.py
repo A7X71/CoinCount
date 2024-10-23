@@ -50,24 +50,28 @@ def menu():
     print("3. Volunteer Accuracy Report\n")
     print("0. Exit")
 
-
-    Selection = RecurseInputs("Select an option: ", int, None)
-
-    if Selection > 3:
-        print("Number is too large")
-        Selection = RecurseInputs("Select an option: ", int, None)
-    elif Selection < 0:
-        print("Too small, (not on the list)")
-        Selection = RecurseInputs("Select an option: ", int, None)
+    while True:  # Start an infinite loop
+        try:
+            Selection = int(input("Please Select an Integer 0-3: "))
+            if 0 <= Selection <= 3:  # Check if it's within the valid range
+                break  # Exit the loop if a valid input is received
+            else:
+                print("Please select a number between 0 and 3.")
+        except ValueError:
+            print("It must be an Integer, Try again!")
 
     return Selection
+
 
 
 Selection = menu()
 
 def save_results(results):
-    with open("Database.txt", "a") as file:
-        file.write(f"Volunteer: {results["VolunteerName"]}, CorrectWeight: {results['CorrectWeight']}, " f"AccuracyScore: {results['AccuracyScore']}%, CoinsOff: {results['CoinsOff']}, TotalRaised: {Results["TotalRaised"]}\n")
+    with open("CoinCount.txt", "a") as file:
+        file.write("Volunteer: {}, CorrectWeight: {}, AccuracyScore: {}%, CoinsOff: {}, TotalRaised: {}\n".format(
+    results["VolunteerName"], results["CorrectWeight"], results["AccuracyScore"], results["CoinsOff"], Results["TotalRaised"]
+))
+
 
 def read_results(value, type):
     string = value
@@ -89,9 +93,9 @@ def read_results(value, type):
             return match.group(5)
 
 def StartCoinSystemProcess():
-    VolunteerName = RecurseInputs("ENTER Volunteer Name: ", str, None)
-    CoinType = RecurseInputs("ENTER Type of Coin (e.g £2 or 50p): ", None, "Any")
-    WeightOfBag = RecurseInputs("ENTER Bag Weight: ", int, None)
+    VolunteerName = str(input("ENTER Volunteer Name: "))
+    CoinType = input("ENTER Type of Coin (e.g £2 or 50p): ")
+    WeightOfBag = float(input("ENTER Bag Weight: "))
 
     AccuracyResults = { # Interchangable values based on the volunteer's results. (Will be returned)
         "VolunteerName": VolunteerName,
@@ -139,13 +143,13 @@ def StartCoinSystemProcess():
         return AccuracyResults
 
 def GetRunningTotals():
-    mode = RecurseInputs("all/specific: ", str, None)
+    mode = str(input("all/specific: "))
 
     if mode == "all":
-        with open("Database.txt", "r") as file:
+        with open("CoinCount.txt", "r") as file:
             Lines = file.readlines()
             for Line in Lines:
-                print(f"Volunteer: {read_results(Line, 1)}, TotalRaised: {"£"+str(read_results(Line, 5))}")
+                print(f"Volunteer: {read_results(Line, 1)}, TotalRaised: {'£' + str(read_results(Line, 5))}")
 
 
 def FetchAccuracyReport():
@@ -153,7 +157,7 @@ def FetchAccuracyReport():
     print("Volunteer Accuracy Sorted from Highest Accuracy to Lowest Accuracy.")
     print("Note: What is displayed is the accuracy of their most recent log.\n")
 
-    with open("Database.txt", "r") as file:
+    with open("CoinCount.txt", "r") as file:
         lines = file.readlines()    
         
         simpleArray = lines
@@ -167,7 +171,7 @@ if Selection == 1:
     print("Buss' My Nines\n")
     Results = StartCoinSystemProcess()
 
-    with open("Database.txt", "r") as yes:
+    with open("CoinCount.txt", "r") as yes:
         lines = yes.readlines()
         name_exists = False
 
@@ -186,9 +190,10 @@ if Selection == 1:
                 TotalRaised =   read_results(line, 5)
                 
                 print(Results["TotalRaised"])
-                lines[loop] = f"Volunteer: {Results['VolunteerName']}, CorrectWeight: {Results["CorrectWeight"]}, AccuracyScore: {str(Results["AccuracyScore"])}%, CoinsOff: {Results["CoinsOff"]}, TotalRaised: {str((float(TotalRaised) + Results["TotalRaised"]))} "
+                lines[loop] = f"Volunteer: {Results['VolunteerName']}, CorrectWeight: {Results['CorrectWeight']}, AccuracyScore: {str(Results['AccuracyScore'])}%, CoinsOff: {Results['CoinsOff']}, TotalRaised: {str((float(TotalRaised) + Results['TotalRaised']))} "
 
-                with open("Database.txt", "w") as file:
+
+                with open("CoinCount.txt", "w") as file:
                     Lines = file.writelines(lines)
                 break
 
