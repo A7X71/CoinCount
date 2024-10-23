@@ -68,19 +68,20 @@ Selection = menu()
 
 def save_results(results):
     with open("CoinCount.txt", "a") as file:
-        file.write("Volunteer: {}, CorrectWeight: {}, AccuracyScore: {}%, CoinsOff: {}, TotalRaised: {}\n".format(
-    results["VolunteerName"], results["CorrectWeight"], results["AccuracyScore"], results["CoinsOff"], Results["TotalRaised"]
+        file.write("Volunteer: {}, CorrectWeight: {}, AccuracyScore: {}%, CoinsOff: {}, TotalRaised: £{}, BagsChecked: {}\n".format(
+    results["VolunteerName"], results["CorrectWeight"], results["AccuracyScore"], results["CoinsOff"], Results["TotalRaised"], Results["BagsChecked"]
 ))
 
 
 def read_results(value, type):
     string = value
 
-    pattern = r"Volunteer: (.*?), CorrectWeight: (.*?), AccuracyScore: (\d+\.\d+)%, CoinsOff: (\d+\.\d+), TotalRaised: (\d+)"
+    # Updated regex pattern to match your specific format
+    pattern = r"Volunteer: (.*?), CorrectWeight: (.*?), AccuracyScore: ([\d.]+)%\, CoinsOff: ([\d.]+), TotalRaised: £([\d.]+), BagsChecked: (\d+)"
 
     match = re.search(pattern, string)
 
-    if match:
+    if match:       
         if type == 1:
             return match.group(1)
         elif type == 2:
@@ -91,9 +92,27 @@ def read_results(value, type):
             return match.group(4)
         elif type == 5:
             return match.group(5)
+        elif type == 6:
+            return match.group(6)
+
 
 def StartCoinSystemProcess():
-    VolunteerName = str(input("ENTER Volunteer Name: "))
+
+    while True:
+
+        try:
+            VolunteerName = str(input("ENTER Volunteer Name: "))
+
+            if VolunteerName.isalpha():
+                break
+            else:
+                print("Must be Alphabetical (No Integers allowed), try again. \n")
+        except ValueError:
+            print("Your input must be a string! Try again.")
+        
+
+
+
     CoinType = input("ENTER Type of Coin (e.g £2 or 50p): ")
     WeightOfBag = float(input("ENTER Bag Weight: "))
 
@@ -102,7 +121,8 @@ def StartCoinSystemProcess():
         "CorrectWeight": False,
         "AccuracyScore": 0,
         "CoinsOff": 0,
-        "TotalRaised": 0
+        "TotalRaised": 0,
+        "BagsChecked": 1
     } 
 
 
@@ -135,10 +155,12 @@ def StartCoinSystemProcess():
     
 
         CoinsOff = (ExpectedCoinAmount - ActualCoinAmount)
+        print(ExpectedCoinAmount)
+        print(ActualCoinAmount)
 
-        AccuracyResults["AccuracyScore"] = TotalAccuracyScore
+        AccuracyResults["AccuracyScore"] = round(TotalAccuracyScore)
         AccuracyResults["CoinsOff"] = CoinsOff
-        AccuracyResults["TotalRaised"] = ActualCoinAmount
+        AccuracyResults["TotalRaised"] = float(BagWeight[CoinType]["TotalValue"]) - CoinsOff
 
         return AccuracyResults
 
@@ -152,17 +174,32 @@ def GetRunningTotals():
                 print(f"Volunteer: {read_results(Line, 1)}, TotalRaised: {'£' + str(read_results(Line, 5))}")
 
 
-def FetchAccuracyReport():
-    print("---------------------------------")
-    print("Volunteer Accuracy Sorted from Highest Accuracy to Lowest Accuracy.")
-    print("Note: What is displayed is the accuracy of their most recent log.\n")
+def FetchAccuracyReport(data, sort_by_index, ascending=True):
+    
+    pattern = r"Volunteer: (.*?), CorrectWeight: (.*?), AccuracyScore: (\d+\.\d+)%, CoinsOff: (\d+\.\d+), TotalRaised: £(\d+), BagsChecked: (\d+)"
+    
+    extracted_data = []
+    
+    # Extract data from each entry
+    for entry in data:
+        match = re.match(pattern, entry)
+        if match:
+            volunteer, correct_weight, accuracy_score, coins_off, total_raised, bags_checked = match.groups()
+            extracted_data.append({
+                'Volunteer': volunteer,
+                'CorrectWeight': bool(correct_weight),
+                'AccuracyScore': float(accuracy_score),
+                'CoinsOff': float(coins_off),
+                'TotalRaised': int(total_raised),
+                'BagsChecked': int(bags_checked)
+            })
+    
+    # Sort the extracted data
+    sorted_data = sorted(extracted_data, key=lambda x: list(x.values())[sort_by_index], reverse=not ascending)
+    
+    return sorted_data
 
-    with open("CoinCount.txt", "r") as file:
-        lines = file.readlines()    
-        
-        simpleArray = lines
 
-        lines.sort()
 
         
 
@@ -188,9 +225,10 @@ if Selection == 1:
                 AccuracyScore = read_results(line, 3)
                 CoinsOff =      read_results(line, 4)
                 TotalRaised =   read_results(line, 5)
+                BagsChecked =   read_results(line, 6)
                 
                 print(Results["TotalRaised"])
-                lines[loop] = f"Volunteer: {Results['VolunteerName']}, CorrectWeight: {Results['CorrectWeight']}, AccuracyScore: {str(Results['AccuracyScore'])}%, CoinsOff: {Results['CoinsOff']}, TotalRaised: {str((float(TotalRaised) + Results['TotalRaised']))} "
+                lines[loop] = f"Volunteer: {Results['VolunteerName']}, CorrectWeight: {Results['CorrectWeight']}, AccuracyScore: {str(Results['AccuracyScore'])}%, CoinsOff: {Results['CoinsOff']}, TotalRaised: {'£'+str((float(TotalRaised) + Results['TotalRaised']))}, BagsChecked: {str(int(BagsChecked) + 1)}"
 
 
                 with open("CoinCount.txt", "w") as file:
@@ -203,4 +241,10 @@ if Selection == 1:
 elif Selection == 2:
     GetRunningTotals()
 elif Selection == 3:
-    FetchAccuracyReport()
+
+    with open("CoinCount.txt", 'r') as file:
+        x = file.readlines()
+
+        sorted_report = FetchAccuracyReport(x, sort_by_index=2, ascending=True)
+        for item in sorted_report:
+            print(item)
